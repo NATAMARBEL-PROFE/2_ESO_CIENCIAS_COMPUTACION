@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Subalgoritmos - Hablar y Baile (Estilo Scratch)</title>
+    <style>
+        :root {
+            --scratch-orange: #FF8C1A;
+            --scratch-blue: #4C97FF;
+            --scratch-purple: #9966FF;
+            --scratch-pink: #FF6680;
+            --scratch-green: #2DE35D;
+            --scratch-yellow: #FFBF00;
+            --scratch-stage-bg: #FFFFFF;
+            --scratch-dark: #202020;
+            --bg-main: #E5E9F0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: #333;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 350px 1fr 320px;
+            gap: 15px;
+            width: 100%;
+            max-width: 1200px;
+            height: auto;
+            min-height: 600px;
+        }
+
+        /* Paneles */
+        .panel {
+            background: #FFF;
+            border-radius: 10px;
+            border: 1px solid #D0D5DD;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .panel-header {
+            background: #F2F4F7;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 1px solid #D0D5DD;
+            color: #475467;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-body {
+            padding: 12px;
+            flex: 1;
+            overflow-y: auto;
+            background: #F9FAFB;
+        }
+
+        /* Bloques de Código de Scratch */
+        .scratch-blocks-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .block-group {
+            background: #FFF;
+            border: 1px dashed #CCC;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .block {
+            color: white;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            width: fit-content;
+            max-width: 100%;
+            position: relative;
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+
+        .block.active {
+            box-shadow: 0 0 0 3px #FFD700, inset 0 -2px 0 rgba(0,0,0,0.2);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        /* Colores de los Bloques */
+        .block-event { background-color: var(--scratch-yellow); color: #573B00; border-radius: 12px 12px 4px 4px; }
+        .block-custom-def { background-color: var(--scratch-pink); border-radius: 12px 4px 4px 4px; }
+        .block-custom-call { background-color: var(--scratch-pink); }
+        .block-looks { background-color: var(--scratch-purple); }
+        .block-motion { background-color: var(--scratch-blue); }
+        
+        /* Estructura de Control C-Block (Repetir) */
+        .block-control-c {
+            background-color: var(--scratch-orange);
+            border-radius: 4px;
+            padding: 6px 4px 6px 12px;
+            margin-bottom: 2px;
+            width: 250px;
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2);
+        }
+        .block-control-c .c-header {
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 4px;
+        }
+        .block-control-c .c-body {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border-left: 8px solid var(--scratch-orange);
+            padding-left: 4px;
+            background: transparent;
+        }
+        .block-control-c .c-footer {
+            font-size: 12px;
+            color: white;
+            font-weight: bold;
+            margin-top: 4px;
+            background-color: var(--scratch-orange);
+            height: 10px;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .input-val {
+            background: white;
+            color: #333;
+            padding: 1px 6px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 0 2px;
+            font-weight: normal;
+        }
+        .input-dropdown {
+            background: rgba(0,0,0,0.1);
+            color: white;
+            padding: 1px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 0 2px;
+        }
+
+        /* Escenario Central */
+        .stage-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .controls-bar {
+            background: #FFF;
+            border-bottom: 1px solid #D0D5DD;
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            border: 1px solid #D0D5DD;
+            border-radius: 6px;
+            cursor: pointer;
+            background: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.2s;
+        }
+
+        button:hover { background: #F9FAFB; }
+
+        button.btn-green-flag {
+            background: #E6F4EA;
+            color: #137333;
+            border-color: #A3E2AB;
+        }
+        button.btn-green-flag:hover { background: #D2EBD4; }
+
+        button.btn-stop {
+            background: #FCE8E6;
+            color: #C5221F;
+            border-color: #FAD2CF;
+        }
+        button.btn-stop:hover { background: #FAD2CF; }
+
+        .speed-select {
+            padding: 5px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: 1px solid #CCC;
+        }
+
+        .stage-area {
+            flex: 1;
+            background: var(--scratch-stage-bg);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid #E4E7EC;
+            min-height: 400px;
+        }
+
+        /* Rejilla de Fondo Opcional de Scratch */
+        .stage-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(to right, #f0f0f0 1px, transparent 1px),
+                              linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: center;
+            pointer-events: none;
+        }
+
+        /* Personaje (Gato de Scratch Simplificado en CSS/SVG) */
+        .scratch-sprite {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            transition: transform 0.3s ease, left 0.3s linear, top 0.3s linear;
+            transform-origin: center;
+            filter: hue-rotate(0deg);
+        }
+
+        /* Bocadillo de diálogo */
+        .speech-bubble {
+            position: absolute;
+            background: white;
+            border: 3px solid #4C97FF;
+            border-radius: 16px;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 13px;
+            color: #333;
+            max-width: 160px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 100;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 20px;
+            border-width: 12px 12px 0;
+            border-style: solid;
+            border-color: white transparent;
+            display: block;
+            width: 0;
+        }
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -16px;
+            left: 18px;
+            border-width: 14px 14px 0;
+            border-style: solid;
+            border-color: #4C97FF transparent;
+            display: block;
+            width: 0;
+        }
+
+        /* Info del Paso Actual */
+        .step-info-box {
+            background: #F8F9FA;
+            padding: 10px 15px;
+            font-size: 13px;
+            border-top: 1px solid #D0D5DD;
+            color: #344054;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Pila de llamadas y Variables */
+        .stack-item {
+            background: #E0E7FF;
+            color: #3730A3;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            border-left: 4px solid #6366F1;
+        }
+
+        .variable-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #EAECF0;
+            font-size: 13px;
+        }
+        .variable-name { font-weight: 500; color: #475467; }
+        .variable-value { font-family: monospace; font-weight: bold; color: #099250; }
+
+        /* Footer Autoría */
+        footer {
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #475467;
+            line-height: 1.5;
+            text-align: left;
+            background: #FFF;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #D0D5DD;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🐈 Visualizador de Subalgoritmos: Hablar y Baile</h1>
+        <div class="subtitle">Nivel: 2º ESO - Reutilización y modularización de código estructurado</div>
+    </header>
+
+    <div class="main-container">
+        <div class="panel">
+            <div class="panel-header">🧩 Bloques del Programa</div>
+            <div class="panel-body">
+                <div class="scratch-blocks-container">
+                    
+                    <div class="block-group">
+                        <div class="block block-event" id="b-flag">al hacer clic en 🏁</div>
+                        <div class="block block-custom-call" id="b-call-hablar" style="margin-left: 10px;">hablar</div>
+                        <div class="block block-custom-call" id="b-call-baile" style="margin-left: 10px;">baile</div>
+                    </div>
+
+                    <div class="block-group">
+                        <div class="block block-custom-def" id="b-def-hablar">definir hablar</div>
+                        <div class="block block-looks" id="b-say1" style="margin-left: 15px;">decir <span class="input-val">¡Hola!</span> durante <span class="input-val">2</span> segundos</div>
+                        <div class="block block-looks" id="b-say2" style="margin-left: 15px;">decir <span class="input-val">Me gusta bailar</span> durante <span class="input-val">2</span> segundos</div>
+                        <div class="block block-looks" id="b-say3" style="margin-left: 15px;">decir <span class="input-val">Únete a mi baile</span> durante <span class="input-val">2</span> segundos</div>
+                    </div>
+
+                    <div class="block-group">
+                        <div class="block block-custom-def" id="b-def-baile">definir baile</div>
+                        <div class="block-control-c" id="b-repeat" style="margin-left: 15px;">
+                            <div class="c-header">repetir <span class="input-val" id="b-repeat-val">10</span></div>
+                            <div class="c-body">
+                                <div class="block block-looks" id="b-costume" style="width:100%;">siguiente disfraz</div>
+                                <div class="block block-motion" id="b-move" style="width:100%;">mover <span class="input-val">10</span> pasos</div>
+                                <div class="block block-motion" id="b-bounce" style="width:100%;">si toca un borde, rebotar</div>
+                                <div class="block block-motion" id="b-rotation" style="width:100%;">fijar estilo de rotación a <span class="input-dropdown">no rotar ▾</span></div>
+                                <div class="block block-looks" id="b-effect" style="width:100%;">dar al efecto <span class="input-dropdown">color ▾</span> el valor <span class="input-val">50</span></div>
+                                <div class="block block-control-c" id="b-wait" style="width:100%; margin:0; padding:4px 8px; background-color:#FF8C1A;">esperar <span class="input-val">5</span> segundos</div>
+                            </div>
+                            <div class="c-footer"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="stage-panel panel">
+            <div class="controls-bar">
+                <div class="btn-controls">
+                    <button class="btn-green-flag" id="btn-start">🏁 Iniciar</button>
+                    <button id="btn-step">🔄 Siguiente Paso</button>
+                    <button class="btn-stop" id="btn-reset">Reiniciar</button>
+                </div>
+                <div>
+                    <span style="font-size:12px; font-weight:bold; margin-right:5px;">Velocidad:</span>
+                    <select class="speed-select" id="select-speed">
+                        <option value="1500">Normal (1.5s)</option>
+                        <option value="2500">Lenta (2.5s)</option>
+                        <option value="600">Rápida (0.6s)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="stage-area" id="stage">
+                <div class="stage-grid"></div>
+                <div class="speech-bubble" id="bubble">¡Hola!</div>
+                
+                <svg class="scratch-sprite" id="sprite" viewBox="0 0 100 100">
+                    <ellipse cx="50" cy="55" rx="22" ry="18" fill="#FF8C1A"/> <!-- Cuerpo -->
+                    <circle cx="50" cy="35" r="18" fill="#FF8C1A"/> <!-- Cabeza -->
+                    <polygon points="35,22 32,5 45,20" fill="#FF8C1A"/> <!-- Oreja izq -->
+                    <polygon points="65,22 68,5 55,20" fill="#FF8C1A"/> <!-- Oreja der -->
+                    <circle cx="44" cy="32" r="4" fill="white"/> <!-- Ojo izq -->
+                    <circle cx="44" cy="32" r="1.5" fill="black"/>
+                    <circle cx="56" cy="32" r="4" fill="white"/> <!-- Ojo der -->
+                    <circle cx="56" cy="32" r="1.5" fill="black"/>
+                    <polygon points="48,37 52,37 50,40" fill="#D13B00"/> <!-- Nariz -->
+                    <path id="legs" d="M 40,72 L 40,85 M 46,72 L 46,85 M 54,72 L 54,85 M 60,72 L 60,85" stroke="#FF8C1A" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+            </div>
+
+            <div class="step-info-box" id="step-info">
+                Haz clic en "Iniciar (Bandera Verde)" para observar paso a paso la simulación secuencial y la llamada a los subalgoritmos.
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">🥞 Pila de Ejecución (Call Stack)</div>
+            <div class="panel-body" id="call-stack" style="flex: 0.4; border-bottom: 1px solid #D0D5DD; max-height: 200px;">
+                <div style="color:#7f8c8d; font-size:12px; font-style:italic;">Pila vacía.</div>
+            </div>
+            
+            <div class="panel-header">📊 Ámbito de Variables</div>
+            <div class="panel-body" id="variables-area">
+                <div class="variable-row"><span class="variable-name">Subalgoritmo activo:</span><span class="variable-value" id="var-subprog">-</span></div>
+                <div class="variable-row"><span class="variable-name">Iteración bucle (i):</span><span class="variable-value" id="var-loop">-</span></div>
+                <div class="variable-row"><span class="variable-name">Efecto Color:</span><span class="variable-value" id="var-color">0</span></div>
+                <div class="variable-row"><span class="variable-name">Bocadillo de texto:</span><span class="variable-value" id="var-speech">-</span></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Aplicación didáctica desarrollada por <strong>Natalia Martínez Belmonte</strong>, docente de 1º y 2º de ESO de las asignaturas de <strong>Ciencias de la computación</strong> y <strong>Tecnología y digitalización</strong>.<br>
+        Fecha de creación: <strong>6 de octubre de 2026</strong>.
+    </footer>
+
+    <script>
+        // Variables de estado del simulador
+        let currentStepIndex = -1;
+        let isRunning = false;
+        let timer = null;
+        let loopCounter = 1;
+        const totalLoops = 10;
+
+        // Estado del personaje
+        let spriteX = 0; // Desplazamiento desde el centro
+        let spriteDirection = 1; // 1 = derecha, -1 = izquierda
+        let currentDisfraz = 0;
+        let hueColor = 0;
+
+        // Definición de la secuencia de ejecución de bloques reales
+        const steps = [
+            { type: 'event', id: 'b-flag', info: 'Se activa el evento de inicio al pulsar la bandera verde.', stack: ['Programa Principal'] },
+            { type: 'call', id: 'b-call-hablar', info: 'El programa principal invoca al subalgoritmo "hablar". Saltando a su definición...', stack: ['Programa Principal', 'Subalgoritmo: hablar'] },
+            { type: 'action', id: 'b-say1', info: 'Dentro de "hablar": El objeto muestra el texto "¡Hola!" durante 2 segundos.', stack: ['Programa Principal', 'Subalgoritmo: hablar'], action: () => showSpeech('¡Hola!') },
+            { type: 'action', id: 'b-say2', info: 'Dentro de "hablar": El objeto cambia su diálogo a "Me gusta bailar" por otros 2 segundos.', stack: ['Programa Principal', 'Subalgoritmo: hablar'], action: () => showSpeech('Me gusta bailar') },
+            { type: 'action', id: 'b-say3', info: 'Dentro de "hablar": Fin del mensaje informativo. Dice "Únete a mi baile" durante 2 segundos.', stack: ['Programa Principal', 'Subalgoritmo: hablar'], action: () => showSpeech('Únete a mi baile') },
+            { type: 'return', id: 'b-call-hablar', info: 'Termina el subalgoritmo "hablar". Se libera su espacio en la pila de memoria y regresamos al programa principal.', stack: ['Programa Principal'], action: () => hideSpeech() },
+            { type: 'call', id: 'b-call-baile', info: 'El programa principal invoca ahora el segundo subalgoritmo: "baile". Redirigiendo el flujo...', stack: ['Programa Principal', 'Subalgoritmo: baile'] },
+        ];
+
+        // Añadimos las instrucciones repetitivas de forma explícita para la simulación didáctica paso a paso
+        for (let i = 1; i <= totalLoops; i++) {
+            steps.push(
+                { type: 'loop-head', id: 'b-repeat', info: `Bucle repetir: Iniciando/Comprobando iteración número ${i} de 10.`, stack: ['Programa Principal', 'Subalgoritmo: baile'], loopIdx: i },
+                { type: 'action', id: 'b-costume', info: `[Iteración ${i}] "siguiente disfraz": Intercambia la postura de las piernas del personaje.`, stack: ['Programa Principal', 'Subalgoritmo: baile'], loopIdx: i, action: nextCostume },
+                { type: 'action', id: 'b-move', info: `[Iteración ${i}] "mover 10 pasos": Desplaza al objeto horizontalmente en la dirección actual.`, stack: ['Programa Principal', 'Subalgoritmo: baile'], loopIdx: i, action: moveSprite },
+                { type: 'action', id: 'b-bounce', info: `[Iteración ${i}] "si toca un borde, rebotar": Verifica límites del escenario físico de Scratch.`, stack: ['Programa Principal', 'Subalgoritmo: baile'], loopIdx: i, action: checkBounce },
+                { type: 'action', id: 'b-rotation', info: `[Iteración ${i}] "fijar estilo de rotación a no rotar": Evita que el objeto se gire vertical o invertido al rebotar.`, stack: ['Programa Principal', 'Subalgoritmo: baile'], loopIdx: i },
+                { type: 'action', id: 'b-effect', info: `[Iteración ${i}] "dar al efecto color el valor 50": Modifica la tonalidad cromática del sprite utilizando su paleta de color.`, stack: ['Programa Principal', 'Subalgoritmo: baile'], loopIdx: i, action: applyColorEffect },
+                { type: 'action', id: 'b-wait', info: `[Iteración ${i}] "esperar 5 segundos": Aplica una pausa para sincronizar la animación en la línea de tiempo.`, stack: ['Programa Principal', 'Subalgoritmo: baile'], loopIdx: i }
+            );
+        }
+
+        // Fin de baile y cierre del flujo principal
+        steps.push(
+            { type: 'return', id: 'b-call-baile', info: 'El bucle ha completado sus 10 iteraciones de forma satisfactoria. Terminando "baile" yardmínandolo de la pila.', stack: ['Programa Principal'] },
+            { type: 'end', id: null, info: 'Fin del programa principal. Todos los subalgoritmos han sido ejecutados de forma estructurada.', stack: [] }
+        );
+
+        // Elementos del DOM
+        const btnStart = document.getElementById('btn-start');
+        const btnStep = document.getElementById('btn-step');
+        const btnReset = document.getElementById('btn-reset');
+        const selectSpeed = document.getElementById('select-speed');
+        const stepInfo = document.getElementById('step-info');
+        const callStackDiv = document.getElementById('call-stack');
+        const sprite = document.getElementById('sprite');
+        const bubble = document.getElementById('bubble');
+
+        // Variables de datos
+        const varSubprog = document.getElementById('var-subprog');
+        const varLoop = document.getElementById('var-loop');
+        const varColor = document.getElementById('var-color');
+        const varSpeech = document.getElementById('var-speech');
+
+        // Handlers de los Eventos
+        btnStart.addEventListener('click', () => {
+            if (isRunning) {
+                pauseAuto();
+            } else {
+                startAuto();
+            }
+        });
+
+        btnStep.addEventListener('click', () => {
+            pauseAuto();
+            executeNextStep();
+        });
+
+        btnReset.addEventListener('click', resetSimulation);
+
+        function executeNextStep() {
+            if (currentStepIndex >= steps.length - 1) {
+                resetSimulation();
+                return;
+            }
+
+            // Quitar resalte previo
+            if (currentStepIndex >= 0) {
+                const prevBlock = document.getElementById(steps[currentStepIndex].id);
+                if (prevBlock) prevBlock.classList.remove('active');
+            }
+
+            currentStepIndex++;
+            const currentStep = steps[currentStepIndex];
+
+            // Resaltar bloque actual
+            const activeBlock = document.getElementById(currentStep.id);
+            if (activeBlock) activeBlock.classList.add('active');
+
+            // Actualizar la interfaz informativa
+            stepInfo.innerText = currentStep.info;
+
+            // Actualizar Pila de Ejecución
+            updateStackUI(currentStep.stack);
+
+            // Actualizar Datos / Ámbito
+            updateVariablesUI(currentStep);
+
+            // Ejecutar la acción gráfica asociada
+            if (currentStep.action) {
+                currentStep.action();
+            }
+
+            // Si llegamos al final del programa de forma natural
+            if (currentStep.type === 'end') {
+                pauseAuto();
+            }
+        }
+
+        function startAuto() {
+            isRunning = true;
+            btnStart.innerHTML = "⏸ Pausar";
+            btnStart.style.backgroundColor = '#FEF3C7';
+            btnStart.style.color = '#B45309';
+            
+            const speed = parseInt(selectSpeed.value);
+            timer = setInterval(() => {
+                executeNextStep();
+            }, speed);
+            executeNextStep();
+        }
+
+        function pauseAuto() {
+            isRunning = false;
+            btnStart.innerHTML = "🏁 Iniciar";
+            btnStart.style.backgroundColor = '#E6F4EA';
+            btnStart.style.color = '#137333';
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+        }
+
+        function resetSimulation() {
+            pauseAuto();
+            
+            // Limpiar bloques activos
+            steps.forEach(s => {
+                if(s.id) {
+                    const b = document.getElementById(s.id);
+                    if(b) b.classList.remove('active');
+                }
+            });
+
+            currentStepIndex = -1;
+            loopCounter = 1;
+            spriteX = 0;
+            spriteDirection = 1;
+            currentDisfraz = 0;
+            hueColor = 0;
+
+            // Reset de estilos del Personaje
+            sprite.style.left = `calc(50% + ${spriteX}px)`;
+            sprite.style.top = '50%';
+            sprite.style.transform = 'translate(-50%, -50%) scaleX(1)';
+            sprite.style.filter = 'hue-rotate(0deg)';
+            hideSpeech();
+
+            // Limpieza UI
+            stepInfo.innerText = 'Haz clic en "Iniciar (Bandera Verde)" para observar paso a paso la simulación secuencial y la llamada a los subalgoritmos.';
+            callStackDiv.innerHTML = '<div style="color:#7f8c8d; font-size:12px; font-style:italic;">Pila vacía.</div>';
+            
+            varSubprog.innerText = '-';
+            varLoop.innerText = '-';
+            varColor.innerText = '0';
+            varSpeech.innerText = '-';
+        }
+
+        // Funciones del Escenario
+        function showSpeech(text) {
+            bubble.innerText = text;
+            bubble.style.display = 'block';
+            updateBubblePosition();
+        }
+
+        function hideSpeech() {
+            bubble.style.display = 'none';
+        }
+
+        function updateBubblePosition() {
+            const spriteLeft = sprite.offsetLeft;
+            const spriteTop = sprite.offsetTop;
+            
+            bubble.style.left = (spriteLeft - 10) + 'px';
+            bubble.style.top = (spriteTop - 55) + 'px';
+        }
+
+        function nextCostume() {
+            currentDisfraz = currentDisfraz === 0 ? 1 : 0;
+            const legs = document.getElementById('legs');
+            if (currentDisfraz === 0) {
+                legs.setAttribute('d', 'M 40,72 L 40,85 M 46,72 L 46,85 M 54,72 L 54,85 M 60,72 L 60,85');
+            } else {
+                legs.setAttribute('d', 'M 38,72 L 32,83 M 44,72 L 42,85 M 52,72 L 56,85 M 58,72 L 68,83');
+            }
+        }
+
+        function moveSprite() {
+            spriteX += (15 * spriteDirection);
+            sprite.style.left = `calc(50% + ${spriteX}px)`;
+            updateBubblePosition();
+        }
+
+        function checkBounce() {
+            const stageWidth = document.getElementById('stage').clientWidth;
+            const limit = (stageWidth / 2) - 50;
+
+            if (Math.abs(spriteX) > limit) {
+                spriteDirection *= -1; 
+                if (spriteDirection === -1) {
+                    sprite.style.transform = 'translate(-50%, -50%) scaleX(-1)';
+                } else {
+                    sprite.style.transform = 'translate(-50%, -50%) scaleX(1)';
+                }
+                stepInfo.innerText += ' ¡El objeto ha tocado el borde del escenario y rebota!';
+            }
+        }
+
+        function applyColorEffect() {
+            hueColor = (hueColor + 50) % 360;
+            sprite.style.filter = `hue-rotate(${hueColor}deg)`;
+        }
+
+        // Actualización de la Pila de Ejecución
+        function updateStackUI(stackArray) {
+            if (!stackArray || stackArray.length === 0) {
+                callStackDiv.innerHTML = '<div style="color:#7f8c8d; font-size:12px; font-style:italic;">Pila vacía.</div>';
+                return;
+            }
+            
+            let html = '';
+            stackArray.forEach((item, index) => {
+                const margin = index * 10;
+                html = `<div class="stack-item" style="margin-left: ${margin}px">📍 ${item}</div>` + html;
+            });
+            callStackDiv.innerHTML = html;
+        }
+
+        // Actualización de Ámbito y Estado
+        function updateVariablesUI(step) {
+            if (step.stack.includes('Subalgoritmo: hablar')) {
+                varSubprog.innerText = 'hablar';
+            } else if (step.stack.includes('Subalgoritmo: baile')) {
+                varSubprog.innerText = 'baile';
+            } else if (step.stack.includes('Programa Principal')) {
+                varSubprog.innerText = 'Principal';
+            } else {
+                varSubprog.innerText = '-';
+            }
+
+            if (step.loopIdx) {
+                varLoop.innerText = `${step.loopIdx} / 10`;
+            } else {
+                varLoop.innerText = '-';
+            }
+
+            varColor.innerText = hueColor;
+
+            if (bubble.style.display === 'block') {
+                varSpeech.innerText = `"${bubble.innerText}"`;
+            } else {
+                varSpeech.innerText = '-';
+            }
+        }
+    </script>
+</body>
+</html>

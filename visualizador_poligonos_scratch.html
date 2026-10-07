@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Subalgoritmos - Polígonos de Colores</title>
+    <style>
+        :root {
+            --scratch-purple: #855CD6;
+            --scratch-orange: #FFAB19;
+            --scratch-blue: #4C97FF;
+            --scratch-pink: #FF6680;
+            --scratch-stage: #FFFFFF;
+            --scratch-bg: #E0E4ED;
+            --scratch-dark: #575E75;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: var(--scratch-bg);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #FFF;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Paneles */
+        .panel {
+            background: #F9F9F9;
+            border: 1px solid #DCDCDC;
+            border-radius: 8px;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .panel-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            color: var(--scratch-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Selector de ejemplos */
+        .selector-box {
+            margin-bottom: 15px;
+            background: #EDF1F7;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 5px solid var(--scratch-blue);
+        }
+
+        select {
+            padding: 8px;
+            font-size: 1em;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        /* Controles */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-green { background-color: #4CB050; color: white; }
+        .btn-blue { background-color: var(--scratch-blue); color: white; }
+        .btn-orange { background-color: var(--scratch-orange); color: white; }
+        .btn-red { background-color: #FF4D4D; color: white; }
+
+        /* Bloques Scratch */
+        .scratch-block {
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-family: monospace;
+            font-size: 1.1em;
+            font-weight: bold;
+            box-shadow: 0 2px 0px rgba(0,0,0,0.2);
+            position: relative;
+            user-select: none;
+        }
+
+        .block-pink { background-color: var(--scratch-pink); border-left: 8px solid #E63956; }
+        .block-orange { background-color: var(--scratch-orange); border-left: 8px solid #E69500; margin-left: 15px; }
+        .block-blue { background-color: var(--scratch-blue); border-left: 8px solid #297ACC; margin-left: 30px; }
+
+        .block-active {
+            outline: 3px solid #FFD700;
+            box-shadow: 0 0 10px #FFD700;
+            z-index: 10;
+        }
+
+        /* Escenario */
+        .stage-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            background-color: var(--scratch-stage);
+            border: 2px solid #DCDCDC;
+            border-radius: 4px;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+            max-width: 100%;
+        }
+
+        /* Pila e Info */
+        .info-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stack-list, .var-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .stack-item {
+            background: #EAF2FF;
+            border: 1px solid #B3D1FF;
+            padding: 6px 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.95em;
+        }
+
+        .var-item {
+            background: #FFF4E0;
+            border: 1px solid #FFD180;
+            padding: 6px 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-family: monospace;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .explanation {
+            background: #FFFFE0;
+            border: 1px solid #E6DB55;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-style: italic;
+            font-size: 0.95em;
+        }
+
+        .footer {
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Polígonos de colores</h1>
+    <p>Dibujar un cuadrado, un triángulo y un pentágono es el mismo algoritmo tres veces, cambiando dos números.</p>
+
+    <div class="selector-box">
+        <label for="polygonSelect"><strong>Llamando al subalgoritmo con distintos valores:</strong></label><br><br>
+        <select id="polygonSelect" onchange="initSimulation()">
+            <option value="4">◼ polígono (4) (100) dibuja un cuadrado</option>
+            <option value="3">▲ polígono (3) (100) dibuja un triángulo</option>
+            <option value="5">⬟ polígono (5) (100) dibuja un pentágono</option>
+            <option value="6">⬢ polígono (6) (100) dibuja un hexágono</option>
+        </select>
+    </div>
+
+    <div class="controls">
+        <button class="btn-green" onclick="startAuto()">🏁 Iniciar (Bandera Verde)</button>
+        <button class="btn-blue" onclick="stepSimulation()">➡ Siguiente Paso</button>
+        <button class="btn-orange" onclick="pauseAuto()">⏸ Pausar</button>
+        <button class="btn-red" onclick="initSimulation()">🔄 Reiniciar</button>
+        <label style="margin-left: 10px; align-self: center;">
+            Velocidad: 
+            <select id="speedSelect" style="width: auto; padding: 4px;" onchange="updateSpeed()">
+                <option value="1500">Normal (1.5s)</option>
+                <option value="2500">Lenta (2.5s)</option>
+                <option value="700">Rápida (0.7s)</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="main-layout">
+        <!-- Panel Izquierdo: Código de Bloques -->
+        <div class="panel">
+            <div class="panel-title">🧩 Bloques del Programa</div>
+            
+            <div id="block-def" class="scratch-block block-pink">
+                definir polígono (lados) (longitud)
+            </div>
+            <div id="block-repeat" class="scratch-block block-orange">
+                repetir (<span id="span-lados-rep">lados</span>)
+            </div>
+            <div id="block-move" class="scratch-block block-blue">
+                mover (<span id="span-longitud-val">longitud</span>) pasos
+            </div>
+            <div id="block-turn" class="scratch-block block-blue">
+                girar (360 / <span id="span-lados-turn">lados</span>) grados
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Escenario -->
+        <div class="panel stage-container">
+            <div class="panel-title">🖥 Escenario (Scratch Stage)</div>
+            <canvas id="scratchCanvas" width="480" height="360"></canvas>
+            
+            <div class="explanation" id="explanationBox">
+                Haz clic en "Iniciar (Bandera Verde)" o en "Siguiente Paso" para observar la ejecución paso a paso.
+            </div>
+        </div>
+    </div>
+
+    <div class="info-row">
+        <div class="panel">
+            <div class="panel-title">🥞 Pila de Ejecución (Call Stack)</div>
+            <ul id="stackList" class="stack-list">
+                <li class="stack-item">Programa Principal</li>
+            </ul>
+        </div>
+        <div class="panel">
+            <div class="panel-title">📊 Ámbito de Variables</div>
+            <ul id="varList" class="var-list">
+                <li class="var-item"><span>lados (parámetro):</span> <strong id="var-lados">-</strong></li>
+                <li class="var-item"><span>longitud (parámetro):</span> <strong id="var-longitud">-</strong></li>
+                <li class="var-item"><span>iteración actual:</span> <strong id="var-iteracion">-</strong></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer">
+        Aplicación didáctica desarrollada por <strong>Natalia Martínez Belmonte</strong>, docente de 1º y 2º de ESO de las asignaturas de <strong>Ciencias de la computación</strong> y <strong>Tecnología y digitalización</strong>.<br>
+        Fecha de creación: <strong>6 de octubre de 2026</strong>.
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('scratchCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Estado de la simulación
+    let totalLados = 4;
+    let longitudPasos = 100; // Siempre 100 según la captura de pantalla
+    let currentStep = 0; 
+    let currentLoop = 0;
+    let autoInterval = null;
+    let speed = 1500;
+
+    // Posición y ángulo del objeto ("gato" o puntero)
+    let posX = 240;
+    let posY = 150;
+    let angle = 0; // en grados (0 hacia la derecha)
+
+    // Historial de líneas dibujadas para mantener el lienzo
+    let drawingHistory = [];
+
+    function initSimulation() {
+        pauseAuto();
+        totalLados = parseInt(document.getElementById('polygonSelect').value);
+        longitudPasos = 100; // Mantenemos estrictamente los 100 pasos informados
+        
+        currentStep = 0;
+        currentLoop = 0;
+        drawingHistory = [];
+        
+        // Calcular el punto inicial óptimo para que un polígono regular de longitud 100 quede perfectamente centrado
+        // Radio del círculo circunscrito R = L / (2 * sin(pi/n))
+        const rad = (Math.PI / totalLados);
+        const R = longitudPasos / (2 * Math.sin(rad));
+        
+        // Centro del canvas es (240, 180). Calculamos el primer vértice de modo que el centro geométrico del polígono sea (240, 180)
+        // Para polígonos regulares, si empezamos con ángulo 0, podemos balancearlo.
+        // Desplazamos el punto de inicio para que toda la figura quepa centrada
+        if (totalLados === 3) {
+            posX = 240 - longitudPasos / 2;
+            posY = 180 + R / 2;
+        } else if (totalLados === 4) {
+            posX = 240 - longitudPasos / 2;
+            posY = 180 - longitudPasos / 2;
+        } else if (totalLados === 5) {
+            posX = 240 - longitudPasos / 2;
+            posY = 180 + R * 0.3;
+        } else {
+            posX = 240 - longitudPasos / 2;
+            posY = 180 - R * 0.8;
+        }
+        
+        angle = 0;
+
+        updateUI();
+        drawStage();
+    }
+
+    function updateSpeed() {
+        speed = parseInt(document.getElementById('speedSelect').value);
+        if (autoInterval) {
+            pauseAuto();
+            startAuto();
+        }
+    }
+
+    function startAuto() {
+        if (autoInterval) clearInterval(autoInterval);
+        stepSimulation();
+        autoInterval = setInterval(stepSimulation, speed);
+    }
+
+    function pauseAuto() {
+        if (autoInterval) {
+            clearInterval(autoInterval);
+            autoInterval = null;
+        }
+    }
+
+    function stepSimulation() {
+        // Lógica de máquina de estados paso a paso
+        // 0: Definición/Llamada, 1: Bucle repetir, 2: Mover pasos, 3: Girar grados, 4: Siguiente iteración o Fin
+        
+        if (currentStep === 0) {
+            currentStep = 1;
+            currentLoop = 1;
+        } else if (currentStep === 1) {
+            currentStep = 2;
+        } else if (currentStep === 2) {
+            // Acción Mover pasos
+            const angleRad = (angle * Math.PI) / 180;
+            const nextX = posX + longitudPasos * Math.cos(angleRad);
+            const nextY = posY + longitudPasos * Math.sin(angleRad);
+            
+            // Guardar trazado
+            drawingHistory.push({x1: posX, y1: posY, x2: nextX, y2: nextY});
+            posX = nextX;
+            posY = nextY;
+            
+            currentStep = 3;
+        } else if (currentStep === 3) {
+            // Acción Girar grados
+            angle += (360 / totalLados);
+            
+            if (currentLoop < totalLados) {
+                currentLoop++;
+                currentStep = 1; // Vuelve al bloque repetir
+            } else {
+                currentStep = 4; // Fin del subalgoritmo
+            }
+        } else if (currentStep === 4) {
+            pauseAuto();
+            updateUI();
+            document.getElementById('explanationBox').innerText = "¡Ejecución finalizada con éxito! El subalgoritmo ha terminado.";
+            clearActiveBlocks();
+            return;
+        }
+
+        updateUI();
+        drawStage();
+    }
+
+    function clearActiveBlocks() {
+        document.querySelectorAll('.scratch-block').forEach(b => b.classList.remove('block-active'));
+    }
+
+    function updateUI() {
+        clearActiveBlocks();
+        
+        const blockDef = document.getElementById('block-def');
+        const blockRepeat = document.getElementById('block-repeat');
+        const blockMove = document.getElementById('block-move');
+        const blockTurn = document.getElementById('block-turn');
+        const expBox = document.getElementById('explanationBox');
+        
+        const stackList = document.getElementById('stackList');
+        const varLados = document.getElementById('var-lados');
+        const varLongitud = document.getElementById('var-longitud');
+        const varIteracion = document.getElementById('var-iteracion');
+
+        // Textos dentro de los bloques dinámicos reflejando los parámetros reales
+        document.getElementById('span-lados-rep').innerText = totalLados;
+        document.getElementById('span-longitud-val').innerText = longitudPasos;
+        document.getElementById('span-lados-turn').innerText = totalLados;
+
+        if (currentStep === 0) {
+            expBox.innerText = "Esperando inicio. El programa principal invocará a: polígono (" + totalLados + ") (" + longitudPasos + ")";
+            stackList.innerHTML = '<li class="stack-item">Programa Principal</li>';
+            varLados.innerText = "-";
+            varLongitud.innerText = "-";
+            varIteracion.innerText = "-";
+        } else {
+            varLados.innerText = totalLados;
+            varLongitud.innerText = longitudPasos;
+            varIteracion.innerText = currentLoop + " de " + totalLados;
+        }
+
+        if (currentStep === 1) {
+            blockRepeat.classList.add('block-active');
+            expBox.innerText = "Bloque Repetir: Comprobando bucle. Vuelta número " + currentLoop + " de " + totalLados + ".";
+            stackList.innerHTML = '<li class="stack-item">Programa Principal</li><li class="stack-item">➔ polígono (' + totalLados + ', ' + longitudPasos + ')</li><li class="stack-item" style="margin-left:15px;">Bucle repetir (' + currentLoop + ')</li>';
+        } else if (currentStep === 2) {
+            blockMove.classList.add('block-active');
+            expBox.innerText = "Bloque Mover: El objeto avanza " + longitudPasos + " pasos hacia adelante trazando una línea.";
+            stackList.innerHTML = '<li class="stack-item">Programa Principal</li><li class="stack-item">➔ polígono (' + totalLados + ', ' + longitudPasos + ')</li><li class="stack-item" style="margin-left:15px;">mover (' + longitudPasos + ') pasos</li>';
+        } else if (currentStep === 3) {
+            blockTurn.classList.add('block-active');
+            expBox.innerText = "Bloque Girar: El objeto cambia su dirección girando " + (360 / totalLados).toFixed(1) + "° grados (360 / " + totalLados + ").";
+            stackList.innerHTML = '<li class="stack-item">Programa Principal</li><li class="stack-item">➔ polígono (' + totalLados + ', ' + longitudPasos + ')</li><li class="stack-item" style="margin-left:15px;">girar (' + (360 / totalLados).toFixed(0) + '°) grados</li>';
+        }
+    }
+
+    function drawStage() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Dibujar fondo de coordenadas suave (Estilo Scratch plano)
+        ctx.strokeStyle = '#F0F0F0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(240, 0); ctx.lineTo(240, 360);
+        ctx.moveTo(0, 180); ctx.lineTo(480, 180);
+        ctx.stroke();
+
+        // Dibujar el historial de líneas trazadas
+        ctx.strokeStyle = '#FF6680'; // Color del lápiz
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        
+        drawingHistory.forEach(line => {
+            ctx.beginPath();
+            ctx.moveTo(line.x1, line.y1);
+            ctx.lineTo(line.x2, line.y2);
+            ctx.stroke();
+        });
+
+        // Dibujar el puntero (Triángulo Scratch representativo del objeto)
+        ctx.save();
+        ctx.translate(posX, posY);
+        ctx.rotate((angle * Math.PI) / 180);
+        
+        ctx.fillStyle = '#4C97FF';
+        ctx.beginPath();
+        ctx.moveTo(12, 0);
+        ctx.lineTo(-8, -8);
+        ctx.lineTo(-8, 8);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.restore();
+    }
+
+    // Inicializar al cargar
+    initSimulation();
+</script>
+
+</body>
+</html>

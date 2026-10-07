@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algoritmos de Ordenación con 10 Cartas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            color: #2b5797;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        .tab {
+            padding: 10px 20px;
+            border: 2px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #2b5797;
+            color: white;
+            border-color: #2b5797;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: #eef2f7;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #2b5797;
+        }
+        .info-box {
+            background: #f0f4f8;
+            border-left: 5px solid #2b5797;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 25px;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #2b5797;
+        }
+        .cards-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            min-height: 120px;
+            align-items: center;
+        }
+        .card {
+            width: 60px;
+            height: 90px;
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .card.default { border-color: #ccc; }
+        .card.comparing { border-color: #f39c12; background-color: #fef5e7; color: #d35400; transform: translateY(-5px); }
+        .card.swapping { border-color: #e74c3c; background-color: #feadad; color: #c0392b; }
+        .card.sorted { border-color: #2ecc71; background-color: #e8f8f5; color: #27ae60; }
+        .card.pivot { border-color: #9b59b6; background-color: #f4ecf7; color: #8e44ad; }
+        
+        .step-text {
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 500;
+            margin-bottom: 25px;
+            min-height: 24px;
+            color: #e67e22;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        button, select {
+            padding: 10px 18px;
+            font-size: 1em;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        .btn-mixed { background: #7f8c8d; color: white; }
+        .btn-next { background: #3498db; color: white; }
+        .btn-auto { background: #2ecc71; color: white; }
+        select { background: #eef2f7; border: 1px solid #ccc; cursor: pointer; }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 3px; border: 1px solid #ccc; }
+        
+        footer {
+            margin-top: 40px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+            text-align: center;
+            font-size: 0.85em;
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Algoritmos de Ordenación con 10 Cartas 🃏</h1>
+    <div class="subtitle">Controla la ejecución paso a paso o de forma automática para tus alumnos</div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="changeAlgorithm('selection')">Selección</div>
+        <div class="tab" onclick="changeAlgorithm('bubble')">Burbuja</div>
+        <div class="tab" onclick="changeAlgorithm('insertion')">Inserción</div>
+        <div class="tab" onclick="changeAlgorithm('quick')">Rápida (QuickSort)</div>
+    </div>
+
+    <div class="stats">
+        <span id="stat-comparisons">Comparaciones: 0</span>
+        <span id="stat-swaps">Intercambios/Movimientos: 0</span>
+    </div>
+
+    <div class="info-box">
+        <h3 id="algo-title">Ordenación por Selección (Selection Sort)</h3>
+        <p id="algo-desc">Busca con el dedo el número más pequeño de toda la zona desordenada y, cuando lo encuentra, lo intercambia directamente por el primero de esa zona.</p>
+    </div>
+
+    <div class="cards-container" id="cards-container"></div>
+
+    <div class="step-text" id="step-commentary">Elige un modo abajo para empezar a ordenar.</div>
+
+    <div class="controls">
+        <button class="btn-mixed" onclick="resetAndShuffle()">Reiniciar/Mezclar</button>
+        <select id="speed-select">
+            <option value="1500">Velocidad: Lenta (1.5s)</option>
+            <option value="2500">Velocidad: Muy Lenta (2.5s)</option>
+            <option value="700" selected>Velocidad: Fluida (0.7s)</option>
+        </select>
+        <button class="btn-next" id="btn-next-step" onclick="nextStep()">Siguiente Paso ➡</button>
+        <button class="btn-auto" id="btn-auto-run" onclick="toggleAutoRun()">¡Ordenación Automática! ▶</button>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="legend-color" style="background: white;"></div> Sin ordenar</div>
+        <div class="legend-item"><div class="legend-color" style="background: #fef5e7; border-color: #f39c12;"></div> Comparando</div>
+        <div class="legend-item"><div class="legend-color" style="background: #feadad; border-color: #e74c3c;"></div> Intercambiando</div>
+        <div class="legend-item"><div class="legend-color" style="background: #e8f8f5; border-color: #2ecc71;"></div> Ya ordenada</div>
+        <div class="legend-item"><div class="legend-color" style="background: #f4ecf7; border-color: #9b59b6;"></div> Pivote (Referencia)</div>
+    </div>
+
+    <footer>
+        Aplicación desarrollada por <strong>Natalia Martínez Belmonte</strong>, docente de 1º y 2º ESO de las asignaturas de Ciencias de la computación y Tecnología y digitalización.<br>
+        Fecha de creación: 6 de octubre de 2026
+    </footer>
+</div>
+
+<script>
+    let originalValues = [6, 5, 10, 4, 7, 9, 8, 1, 2, 3];
+    let cards = [];
+    let currentAlgo = 'selection';
+    let comparisons = 0;
+    let swaps = 0;
+    let steps = [];
+    let currentStepIdx = 0;
+    let autoInterval = null;
+
+    const algoData = {
+        selection: {
+            title: "Ordenación por Selección (Selection Sort)",
+            desc: "Busca con el dedo el número más pequeño de toda la zona desordenada y, cuando lo encuentra, lo intercambia directamente por el primero de esa zona."
+        },
+        bubble: {
+            title: "Ordenación por Burbuja (Bubble Sort)",
+            desc: "Compara parejas de elementos adyacentes y los intercambia si están en el orden incorrecto. El elemento más grande 'flota' hasta el final en cada pasada."
+        },
+        insertion: {
+            title: "Ordenación por Inserción (Insertion Sort)",
+            desc: "Toma cada elemento uno por uno y lo inserta en su posición correcta dentro de la sublista que ya ha sido previamente ordenada."
+        },
+        quick: {
+            title: "Ordenación Rápida (QuickSort)",
+            desc: "Elige un elemento como 'pivote' y divide la lista de forma que los menores queden a la izquierda y los mayores a la derecha, repitiendo el proceso de forma recursiva."
+        }
+    };
+
+    function initCards() {
+        cards = originalValues.map(val => ({ value: val, status: 'default' }));
+        renderCards();
+    }
+
+    function renderCards() {
+        const container = document.getElementById('cards-container');
+        container.innerHTML = '';
+        cards.forEach(card => {
+            const div = document.createElement('div');
+            div.className = `card ${card.status}`;
+            div.innerText = card.value;
+            container.appendChild(div);
+        });
+        document.getElementById('stat-comparisons').innerText = `Comparaciones: ${comparisons}`;
+        document.getElementById('stat-swaps').innerText = `Intercambios/Movimientos: ${swaps}`;
+    }
+
+    function changeAlgorithm(algo) {
+        currentAlgo = algo;
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        document.getElementById('algo-title').innerText = algoData[algo].title;
+        document.getElementById('algo-desc').innerText = algoData[algo].desc;
+        
+        resetAndShuffle();
+    }
+
+    function resetAndShuffle() {
+        stopAutoRun();
+        // Mezclar valores de forma pseudo-aleatoria o usar la lista inicial fija para demostración interactiva
+        originalValues.sort(() => Math.random() - 0.5);
+        comparisons = 0;
+        swaps = 0;
+        currentStepIdx = 0;
+        initCards();
+        generateSteps();
+        document.getElementById('step-commentary').innerText = "¡Lista mezclada! Pulsa 'Siguiente Paso' o 'Ordenación Automática'.";
+    }
+
+    function generateSteps() {
+        steps = [];
+        let arr = cards.map(c => ({...c}));
+        let compCount = 0;
+        let swapCount = 0;
+
+        // Guardar estado inicial
+        steps.push({
+            cardsState: arr.map(c => ({...c, status: 'default'})),
+            commentary: "Estado inicial de la lista desordenada.",
+            comparisons: 0,
+            swaps: 0
+        });
+
+        if (currentAlgo === 'selection') {
+            let n = arr.length;
+            for (let i = 0; i < n - 1; i++) {
+                let minIdx = i;
+                
+                // Mostrar que empezamos a buscar el mínimo desde i
+                let startState = arr.map((c, idx) => ({...c, status: idx < i ? 'sorted' : (idx === minIdx ? 'comparing' : 'default')}));
+                steps.push({
+                    cardsState: startState,
+                    commentary: `Buscamos el mínimo provisional empezando en la posición ${i+1} (valor: ${arr[i].value}).`,
+                    comparisons: compCount,
+                    swaps: swapCount
+                });
+
+                for (let j = i + 1; j < n; j++) {
+                    compCount++;
+                    let checkState = arr.map((c, idx) => {
+                        if (idx < i) return {...c, status: 'sorted'};
+                        if (idx === j || idx === minIdx) return {...c, status: 'comparing'};
+                        return {...c, status: 'default'};
+                    });
+                    
+                    let isLesser = arr[j].value < arr[minIdx].value;
+                    let explanation = isLesser 
+                        ? `🔍 ¿Es el ${arr[j].value} menor que el mínimo provisional (${arr[minIdx].value})? ¡Sí! Nuevo mínimo provisional encontrado.`
+                        : `🔍 ¿Es el ${arr[j].value} menor que el mínimo provisional (${arr[minIdx].value})? No.`;
+
+                    if (isLesser) {
+                        minIdx = j;
+                    }
+
+                    steps.push({
+                        cardsState: arr.map((c, idx) => {
+                            if (idx < i) return {...c, status: 'sorted'};
+                            if (idx === minIdx) return {...c, status: 'comparing'};
+                            return {...c, status: 'default'};
+                        }),
+                        commentary: explanation,
+                        comparisons: compCount,
+                        swaps: swapCount
+                    });
+                }
+
+                if (minIdx !== i) {
+                    swapCount++;
+                    // Mostrar estado de intercambio
+                    let swapState = arr.map((c, idx) => {
+                        if (idx < i) return {...c, status: 'sorted'};
+                        if (idx === i || idx === minIdx) return {...c, status: 'swapping'};
+                        return {...c, status: 'default'};
+                    });
+                    steps.push({
+                        cardsState: swapState,
+                        commentary: `🔄 Intercambiamos el elemento en la posición ${i+1} (${arr[i].value}) con el mínimo encontrado (${arr[minIdx].value}).`,
+                        comparisons: compCount,
+                        swaps: swapCount
+                    });
+
+                    let temp = arr[i];
+                    arr[i] = arr[minIdx];
+                    arr[minIdx] = temp;
+                } else {
+                    steps.push({
+                        cardsState: arr.map((c, idx) => ({...c, status: idx <= i ? 'sorted' : 'default'})),
+                        commentary: `El elemento ${arr[i].value} ya era el mínimo de la zona desordenada. No hace falta intercambiar.`,
+                        comparisons: compCount,
+                        swaps: swapCount
+                    });
+                }
+                
+                arr[i].status = 'sorted';
+            }
+            // Último elemento ya queda ordenado automáticamente
+            arr[arr.length - 1].status = 'sorted';
+            steps.push({
+                cardsState: arr.map(c => ({...c, status: 'sorted'})),
+                commentary: "¡Enhorabuena! La lista ya está completamente ordenada por Selección.",
+                comparisons: compCount,
+                swaps: swapCount
+            });
+
+        } else if (currentAlgo === 'bubble') {
+            let n = arr.length;
+            for (let i = 0; i < n - 1; i++) {
+                for (let j = 0; j < n - i - 1; j++) {
+                    compCount++;
+                    let checkState = arr.map((c, idx) => {
+                        if (idx >= n - i) return {...c, status: 'sorted'};
+                        if (idx === j || idx === j + 1) return {...c, status: 'comparing'};
+                        return {...c, status: 'default'};
+                    });
+                    
+                    let needSwap = arr[j].value > arr[j+1].value;
+                    steps.push({
+                        cardsState: checkState,
+                        commentary: `🔍 ¿Es el ${arr[j].value} mayor que ${arr[j+1].value}? ${needSwap ? '¡Sí, hay que intercambiar!' : 'No, el orden es correcto.'}`,
+                        comparisons: compCount,
+                        swaps: swapCount
+                    });
+
+                    if (needSwap) {
+                        swapCount++;
+                        let temp = arr[j];
+                        arr[j] = arr[j+1];
+                        arr[j+1] = temp;
+
+                        let swapState = arr.map((c, idx) => {
+                            if (idx >= n - i) return {...c, status: 'sorted'};
+                            if (idx === j || idx === j + 1) return {...c, status: 'swapping'};
+                            return {...c, status: 'default'};
+                        });
+                        steps.push({
+                            cardsState: swapState,
+                            commentary: `🔄 Intercambiamos ${arr[j+1].value} y ${arr[j].value}.`,
+                            comparisons: compCount,
+                            swaps: swapCount
+                        });
+                    }
+                }
+                arr[n - i - 1].status = 'sorted';
+            }
+            steps.push({
+                cardsState: arr.map(c => ({...c, status: 'sorted'})),
+                commentary: "¡Enhorabuena! La lista ya está completamente ordenada por Burbuja.",
+                comparisons: compCount,
+                swaps: swapCount
+            });
+
+        } else if (currentAlgo === 'insertion') {
+            let n = arr.length;
+            arr[0].status = 'sorted';
+            
+            for (let i = 1; i < n; i++) {
+                let key = arr[i];
+                let j = i - 1;
+                
+                steps.push({
+                    cardsState: arr.map((c, idx) => {
+                        if (idx === i) return {...c, status: 'pivot'};
+                        if (idx < i) return {...c, status: 'sorted'};
+                        return {...c, status: 'default'};
+                    }),
+                    commentary: `Tomamos la carta ${key.value} e intentamos insertarla en su lugar correcto entre los elementos ya ordenados de la izquierda.`,
+                    comparisons: compCount,
+                    swaps: swapCount
+                });
+
+                while (j >= 0) {
+                    compCount++;
+                    let checkState = arr.map((c, idx) => {
+                        if (idx === j) return {...c, status: 'comparing'};
+                        if (idx === j + 1) return {...c, status: 'pivot'};
+                        if (idx < i) return {...c, status: 'sorted'};
+                        return {...c, status: 'default'};
+                    });
+
+                    if (arr[j].value > key.value) {
+                        steps.push({
+                            cardsState: checkState,
+                            commentary: `🔍 ¿Es ${arr[j].value} mayor que ${key.value}? Sí, desplazamos el ${arr[j].value} a la derecha.`,
+                            comparisons: compCount,
+                            swaps: swapCount
+                        });
+
+                        swapCount++;
+                        arr[j + 1] = arr[j];
+                        j = j - 1;
+                    } else {
+                        steps.push({
+                            cardsState: checkState,
+                            commentary: `🔍 ¿Es ${arr[j].value} mayor que ${key.value}? No. Encontramos la posición de inserción.`,
+                            comparisons: compCount,
+                            swaps: swapCount
+                        });
+                        break;
+                    }
+                }
+                arr[j + 1] = key;
+                
+                steps.push({
+                    cardsState: arr.map((c, idx) => {
+                        if (idx <= i) return {...c, status: 'sorted'};
+                        return {...c, status: 'default'};
+                    }),
+                    commentary: `Insertamos la carta ${key.value} en la posición correcta.`,
+                    comparisons: compCount,
+                    swaps: swapCount
+                });
+            }
+            steps.push({
+                cardsState: arr.map(c => ({...c, status: 'sorted'})),
+                commentary: "¡Enhorabuena! La lista ya está completamente ordenada por Inserción.",
+                comparisons: compCount,
+                swaps: swapCount
+            });
+
+        } else if (currentAlgo === 'quick') {
+            // Un enfoque secuencial simplificado de QuickSort simulado para el visor didáctico paso a paso
+            function quicksortSim(l, h) {
+                if (l < h) {
+                    let pIdx = partition(l, h);
+                    quicksortSim(l, pIdx - 1);
+                    quicksortSim(pIdx + 1, h);
+                } else if (l === h) {
+                    arr[l].status = 'sorted';
+                }
+            }
+
+            function partition(l, h) {
+                let pivot = arr[h].value;
+                steps.push({
+                    cardsState: arr.map((c, idx) => {
+                        if (idx === h) return {...c, status: 'pivot'};
+                        if (idx >= l && idx < h) return {...c, status: 'default'};
+                        return {...c, status: c.status === 'sorted' ? 'sorted' : 'default'};
+                    }),
+                    commentary: `Elegimos la última carta de la sublista como pivote (${pivot}).`,
+                    comparisons: compCount,
+                    swaps: swapCount
+                });
+
+                let i = l - 1;
+                for (let j = l; j < h; j++) {
+                    compCount++;
+                    let checkState = arr.map((c, idx) => {
+                        if (idx === h) return {...c, status: 'pivot'};
+                        if (idx === j) return {...c, status: 'comparing'};
+                        if (i >= l && idx === i) return {...c, status: 'swapping'};
+                        return {...c, status: c.status === 'sorted' ? 'sorted' : 'default'};
+                    });
+
+                    let smaller = arr[j].value < pivot;
+                    steps.push({
+                        cardsState: checkState,
+                        commentary: `🔍 ¿Es el elemento actual ${arr[j].value} menor que el pivote (${pivot})? ${smaller ? 'Sí' : 'No'}.`,
+                        comparisons: compCount,
+                        swaps: swapCount
+                    });
+
+                    if (smaller) {
+                        i++;
+                        swapCount++;
+                        let temp = arr[i];
+                        arr[i] = arr[j];
+                        arr[j] = temp;
+                    }
+                }
+                swapCount++;
+                let temp = arr[i + 1];
+                arr[i + 1] = arr[h];
+                arr[h] = temp;
+
+                arr[i + 1].status = 'sorted';
+                steps.push({
+                    cardsState: arr.map((c, idx) => {
+                        if (idx === i + 1) return {...c, status: 'sorted'};
+                        return {...c, status: c.status === 'sorted' ? 'sorted' : 'default'};
+                    }),
+                    commentary: `🔄 Colocamos el pivote (${pivot}) en su posición final correcta. Los menores están a su izquierda y los mayores a la derecha.`,
+                    comparisons: compCount,
+                    swaps: swapCount
+                });
+
+                return i + 1;
+            }
+
+            quicksortSim(0, arr.length - 1);
+            steps.push({
+                cardsState: arr.map(c => ({...c, status: 'sorted'})),
+                commentary: "¡Enhorabuena! La lista ya está completamente ordenada por QuickSort.",
+                comparisons: compCount,
+                swaps: swapCount
+            });
+        }
+    }
+
+    function nextStep() {
+        if (currentStepIdx < steps.length - 1) {
+            currentStepIdx++;
+            applyStep(currentStepIdx);
+        } else {
+            stopAutoRun();
+            document.getElementById('step-commentary').innerText = "🎉 El algoritmo ya ha finalizado.";
+        }
+    }
+
+    function applyStep(idx) {
+        const step = steps[idx];
+        cards = step.cardsState.map(c => ({...c}));
+        comparisons = step.comparisons;
+        swaps = step.swaps;
+        document.getElementById('step-commentary').innerHTML = step.commentary;
+        renderCards();
+    }
+
+    function toggleAutoRun() {
+        const btn = document.getElementById('btn-auto-run');
+        if (autoInterval) {
+            stopAutoRun();
+        } else {
+            btn.innerHTML = "¡Detener Animación! ⏹";
+            btn.style.background = "#e74c3c";
+            const speed = parseInt(document.getElementById('speed-select').value);
+            autoInterval = setInterval(() => {
+                if (currentStepIdx >= steps.length - 1) {
+                    stopAutoRun();
+                } else {
+                    nextStep();
+                }
+            }, speed);
+        }
+    }
+
+    function stopAutoRun() {
+        if (autoInterval) {
+            clearInterval(autoInterval);
+            autoInterval = null;
+        }
+        const btn = document.getElementById('btn-auto-run');
+        if (btn) {
+            btn.innerHTML = "¡Ordenación Automática! ▶";
+            btn.style.background = "#2ecc71";
+        }
+    }
+
+    // Inicializar al cargar
+    window.onload = function() {
+        initCards();
+        generateSteps();
+    };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Subalgoritmos - Estilo Scratch</title>
+    <style>
+        :root {
+            --scratch-orange: #FFBF00;
+            --scratch-purple: #9966FF;
+            --scratch-blue: #4C97FF;
+            --scratch-green: #40BF4A;
+            --scratch-yellow: #FFAB19;
+            --scratch-dark: #1e1e1e;
+            --scratch-light: #f9f9f9;
+            --scratch-border: #d9d9d9;
+            --scratch-variables: #FF8C1A;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #E5E5E5;
+            margin: 0;
+            padding: 10px;
+            color: #575E75;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--scratch-blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .controls-top {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 10px;
+            border-bottom: 2px solid var(--scratch-border);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        select, button, input {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            border-radius: 20px;
+            border: 1px solid var(--scratch-border);
+            outline: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        select {
+            background-color: white;
+        }
+
+        button.btn-green {
+            background-color: var(--scratch-green);
+            color: white;
+            border: none;
+        }
+        button.btn-green:hover { background-color: #38a640; }
+
+        button.btn-orange {
+            background-color: var(--scratch-orange);
+            color: white;
+            border: none;
+        }
+        button.btn-orange:hover { background-color: #e6ac00; }
+
+        button:disabled {
+            background-color: #ccc !important;
+            cursor: not-allowed;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 340px;
+            gap: 10px;
+            margin-top: 10px;
+            flex-grow: 1;
+        }
+
+        @media (max-width: 1000px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--scratch-border);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Bloques de Código */
+        .workspace {
+            overflow-y: auto;
+            background-color: #f0f4f9;
+            border-radius: 6px;
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .block {
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+            box-shadow: 1px 2px 0px rgba(0,0,0,0.15);
+            position: relative;
+            width: fit-content;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .block.active {
+            outline: 3px solid #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+            z-index: 10;
+        }
+
+        .block-event { background-color: var(--scratch-orange); border-radius: 15px 15px 4px 4px; }
+        .block-control { background-color: var(--scratch-yellow); }
+        .block-variable { background-color: var(--scratch-variables); }
+        .block-subprogram { background-color: var(--scratch-purple); }
+        .block-motion { background-color: var(--scratch-blue); }
+        .block-operator { background-color: var(--scratch-green); }
+
+        .block-indent {
+            margin-left: 20px;
+            border-left: 4px solid rgba(0,0,0,0.1);
+            padding-left: 5px;
+        }
+
+        .block input, .block span.inline-val {
+            background: white;
+            color: black;
+            border: none;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: normal;
+        }
+
+        /* Pila de Ejecución (Stack) */
+        .stack-container {
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 6px;
+            background: #fafafa;
+            border: 2px dashed var(--scratch-border);
+            border-radius: 6px;
+            padding: 10px;
+            flex-grow: 1;
+            min-height: 200px;
+        }
+
+        .stack-frame {
+            padding: 10px;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+            animation: pushAnim 0.3s ease-out;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stack-frame.main { background-color: var(--scratch-blue); }
+        .stack-frame.sub { background-color: var(--scratch-purple); }
+
+        @keyframes pushAnim {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Escenario */
+        .stage {
+            background: white;
+            border: 3px solid var(--scratch-border);
+            border-radius: 6px;
+            height: 240px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .grid-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-size: 20px 20px;
+            background-image: linear-gradient(to right, #f0f0f0 1px, transparent 1px),
+                              linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
+            z-index: 1;
+        }
+
+        .sprite {
+            font-size: 4rem;
+            position: absolute;
+            z-index: 2;
+            transition: all 0.3s ease;
+            bottom: 40px;
+            left: 130px;
+        }
+
+        .speech-bubble {
+            position: absolute;
+            background: white;
+            border: 2px solid #575E75;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            z-index: 3;
+            max-width: 160px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 20px;
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: white transparent;
+            display: block;
+            width: 0;
+        }
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -13px;
+            left: 19px;
+            border-width: 11px 11px 0;
+            border-style: solid;
+            border-color: #575E75 transparent;
+            display: block;
+            width: 0;
+        }
+
+        /* Monitores de Variables */
+        .variables-monitor {
+            margin-top: 10px;
+            background: #f4f4f4;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 0.85rem;
+        }
+        .monitor-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            padding: 3px 6px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        .monitor-row.global { border-left: 4px solid var(--scratch-blue); }
+        .monitor-row.local { border-left: 4px solid var(--scratch-purple); }
+        .monitor-label { font-weight: bold; }
+        .monitor-value { font-family: monospace; background: #e0f0ff; padding: 1px 5px; border-radius: 3px; }
+
+        /* Explicación de Paso */
+        .step-explanation {
+            background-color: #eef7ff;
+            border-left: 5px solid var(--scratch-blue);
+            padding: 10px;
+            border-radius: 0 4px 4px 0;
+            margin-top: auto;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        footer {
+            margin-top: 20px;
+            background-color: #333;
+            color: #bbb;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.85rem;
+            border-radius: 0 0 8px 8px;
+            line-height: 1.4;
+        }
+        footer strong { color: white; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🐈 Visualizador Didáctico de Subprogramas y Procedimientos</h1>
+        <div style="font-size: 0.9rem; font-weight: bold;">Nivel: 2º ESO</div>
+    </header>
+
+    <div class="controls-top">
+        <label for="example-select"><strong>Elige un Ejemplo Scratch:</strong></label>
+        <select id="example-select" onchange="loadExample()">
+            <option value="area">Calcular Área Rectángulo 📐 (Función con Retorno)</option>
+            <option value="par">¿Es Número Par? 🔢 (Condicional con Retorno)</option>
+            <option value="escalera">Dibujar Escalera 🪜 (Procedimiento Puro)</option>
+        </select>
+
+        <button id="btn-start" class="btn-green" onclick="startSimulation()">🏁 Iniciar (Bandera Verde)</button>
+        <button id="btn-next" class="btn-orange" onclick="nextStep()" disabled>➡️ Siguiente Paso</button>
+        <button id="btn-reset" onclick="resetSimulation()">🔄 Reiniciar</button>
+
+        <label style="margin-left: 10px;">
+            Velocidad:
+            <select id="speed-select">
+                <option value="1500">Normal (1.5s)</option>
+                <option value="2500">Lenta (2.5s)</option>
+                <option value="700">Rápida (0.7s)</option>
+            </select>
+        </label>
+        <button id="btn-auto" class="btn-green" onclick="toggleAuto()" disabled>▶️ Ejecución Automática</button>
+    </div>
+
+    <div class="main-container">
+        <!-- Izquierda: Memoria y Pila -->
+        <div class="panel">
+            <div class="panel-title">🥞 Pila de Ejecución (Call Stack)</div>
+            <p style="font-size: 0.8rem; margin: 0 0 10px 0; color: #666;">Indica qué parte del programa se está ejecutando en este momento de forma jerárquica.</p>
+            <div id="stack-container" class="stack-container">
+                <!-- Stack frames go here -->
+            </div>
+
+            <div class="panel-title" style="margin-top: 15px;">📊 Ámbito de Variables</div>
+            <div id="variables-monitor" class="variables-monitor">
+                <!-- Variables list -->
+                <div style="color:#888; text-align:center;">Inicia la simulación para ver las variables.</div>
+            </div>
+        </div>
+
+        <!-- Centro: Código Scratch -->
+        <div class="panel">
+            <div class="panel-title">🧩 Bloques del Programa</div>
+            <div id="workspace" class="workspace">
+                <!-- Code blocks populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Derecha: Escenario de Resultados -->
+        <div class="panel">
+            <div class="panel-title">🖥️ Escenario (Scratch Stage)</div>
+            <div class="stage">
+                <div class="grid-bg"></div>
+                <div id="speech-bubble" class="speech-bubble">¡Hola!</div>
+                <div id="sprite" class="sprite">🐱</div>
+            </div>
+
+            <div class="panel-title" style="margin-top: 15px;">ℹ️ Explicación del Paso Actual</div>
+            <div id="step-explanation" class="step-explanation">
+                Haz clic en "Iniciar (Bandera Verde)" para ver cómo interactúan el programa principal y las subrutinas.
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Aplicación didáctica desarrollada por <strong>Natalia Martínez Belmonte</strong>, docente de 1º y 2º de ESO de las asignaturas de <strong>Ciencias de la computación</strong> y <strong>Tecnología y digitalización</strong>.<br>
+        Fecha de creación: <strong>6 de octubre de 2026</strong>.
+    </footer>
+
+    <script>
+        // Datos de los ejemplos estructurados por pasos simples de ejecución
+        const examples = {
+            area: {
+                blocksHTML: `
+                    <div>
+                        <div class="block block-event" id="b-main-0">Al hacer clic en 🏁</div><br>
+                        <div class="block block-variable" id="b-main-1">fijar <span class="inline-val">base</span> a 5</div><br>
+                        <div class="block block-variable" id="b-main-2">fijar <span class="inline-val">altura</span> a 3</div><br>
+                        <div class="block block-variable" id="b-main-3">fijar <span class="inline-val">resultado</span> a <div class="block block-subprogram" style="margin:0; box-shadow:none; padding: 2px 6px;">calcularÁrea (base, altura)</div></div><br>
+                        <div class="block block-motion" id="b-main-4">decir <span class="inline-val">resultado</span> por 2 segundos</div>
+                    </div>
+                    <hr style="width:100%; border:1px dashed var(--scratch-border);">
+                    <div>
+                        <div class="block block-subprogram" id="b-sub-0">definir calcularÁrea (b, h)</div><br>
+                        <div class="block block-variable block-indent" id="b-sub-1">fijar <span class="inline-val">áreaLocal</span> a <div class="block block-operator" style="margin:0; box-shadow:none; padding: 2px 6px;">b * h</div></div><br>
+                        <div class="block block-control block-indent" id="b-sub-2">devolver <span class="inline-val">áreaLocal</span></div>
+                    </div>
+                `,
+                steps: [
+                    { type: 'main', blockId: 'b-main-0', exp: '¡Comienza el programa principal al pulsar la bandera verde!', action: (vars) => { vars.base = '?'; vars.altura = '?'; vars.resultado = '?'; } },
+                    { type: 'main', blockId: 'b-main-1', exp: 'Se crea la variable global "base" y le asignamos el valor 5.', action: (vars) => { vars.base = 5; } },
+                    { type: 'main', blockId: 'b-main-2', exp: 'Se crea la variable global "altura" y le asignamos el valor 3.', action: (vars) => { vars.altura = 3; } },
+                    { type: 'main', blockId: 'b-main-3', exp: '¡Atención! Llamamos al subprograma "calcularÁrea" pasándole los valores de base (5) y altura (3) como parámetros.', action: (vars) => { vars.b = 5; vars.h = 3; vars.áreaLocal = '?'; }, pushStack: 'calcularÁrea (5, 3)' },
+                    { type: 'sub', blockId: 'b-sub-0', exp: 'Entramos al subprograma. Las variables locales "b" y "h" reciben los datos (5 y 3). Esto se llama "pasar parámetros".' },
+                    { type: 'sub', blockId: 'b-sub-1', exp: 'Dentro del subprograma, multiplicamos b (5) por h (3) y lo guardamos en la variable local "áreaLocal".', action: (vars) => { vars.áreaLocal = 15; } },
+                    { type: 'sub', blockId: 'b-sub-2', exp: 'El subprograma termina y devuelve el valor de "áreaLocal" (15) hacia el programa principal.', popStack: true },
+                    { type: 'main', blockId: 'b-main-3', exp: 'De vuelta en el programa principal, el valor recibido (15) se almacena en la variable global "resultado".', action: (vars) => { vars.resultado = 15; delete vars.b; delete vars.h; delete vars.áreaLocal; } },
+                    { type: 'main', blockId: 'b-main-4', exp: 'El gato muestra en pantalla el valor final de la variable global "resultado".', say: '¡El área es 15!' },
+                    { type: 'end', exp: 'Fin del programa. Los alumnos han visto cómo un subprograma realiza un cálculo y devuelve el dato de forma limpia.' }
+                ]
+            },
+            par: {
+                blocksHTML: `
+                    <div>
+                        <div class="block block-event" id="b-main-0">Al hacer clic en 🏁</div><br>
+                        <div class="block block-variable" id="b-main-1">fijar <span class="inline-val">número</span> a 7</div><br>
+                        <div class="block block-control" id="b-main-2">si <div class="block block-subprogram" style="margin:0; box-shadow:none; padding:2px 6px;">¿esPar? (número)</div> entonces</div><br>
+                        <div class="block block-motion block-indent" id="b-main-3">decir [¡Es par!]</div><br>
+                        <div class="block block-control" id="b-main-4">sino</div><br>
+                        <div class="block block-motion block-indent" id="b-main-5">decir [¡Es impar!]</div>
+                    </div>
+                    <hr style="width:100%; border:1px dashed var(--scratch-border);">
+                    <div>
+                        <div class="block block-subprogram" id="b-sub-0">definir ¿esPar? (n)</div><br>
+                        <div class="block block-control block-indent" id="b-sub-1">si <div class="block block-operator" style="margin:0; box-shadow:none; padding:2px 6px;">n módulo 2 = 0</div> entonces</div><br>
+                        <div class="block block-control block-indent" style="margin-left:40px;" id="b-sub-2">devolver <span class="inline-val">true</span></div><br>
+                        <div class="block block-control block-indent" id="b-sub-3">sino</div><br>
+                        <div class="block block-control block-indent" style="margin-left:40px;" id="b-sub-4">devolver <span class="inline-val">false</span></div>
+                    </div>
+                `,
+                steps: [
+                    { type: 'main', blockId: 'b-main-0', exp: 'Iniciamos el programa para verificar si un número es par o impar.', action: (vars) => { vars.número = '?'; } },
+                    { type: 'main', blockId: 'b-main-1', exp: 'Fijamos la variable global "número" a 7.', action: (vars) => { vars.número = 7; } },
+                    { type: 'main', blockId: 'b-main-2', exp: 'Para evaluar la condición del "si", el programa principal llama a la función condicional ¿esPar?.', action: (vars) => { vars.n = 7; }, pushStack: '¿esPar? (7)' },
+                    { type: 'sub', blockId: 'b-sub-0', exp: 'Entramos a la subrutina. El parámetro "n" adopta el valor de 7.' },
+                    { type: 'sub', blockId: 'b-sub-1', exp: 'Calculamos el residuo/módulo de 7 entre 2. Como da 1 (no es 0), saltamos directamente al bloque "sino".' },
+                    { type: 'sub', blockId: 'b-sub-4', exp: 'Ejecutamos el bloque dentro del "sino" devolviendo "false" (Falso), indicando que no es par.', popStack: true },
+                    { type: 'main', blockId: 'b-main-2', exp: 'Al recibir "false", la condición del "si" principal no se cumple, por lo que saltamos al "sino" global.', action: (vars) => { delete vars.n; } },
+                    { type: 'main', blockId: 'b-main-5', exp: 'El programa entra al ramal "sino" y el gato anuncia el veredicto.', say: '¡Es impar!' },
+                    { type: 'end', exp: 'Fin de la simulación. Se demuestra el uso de funciones lógicas (booleanas) aplicadas a flujos condicionales.' }
+                ]
+            },
+            escalera: {
+                blocksHTML: `
+                    <div>
+                        <div class="block block-event" id="b-main-0">Al hacer clic en 🏁</div><br>
+                        <div class="block block-motion" id="b-main-1">ir a x: 50, y: 40 (Reiniciar posición)</div><br>
+                        <div class="block block-subprogram" id="b-main-2">dibujarEscalera (3)</div><br>
+                        <div class="block block-motion" id="b-main-3">decir [¡Escalera terminada!]</div>
+                    </div>
+                    <hr style="width:100%; border:1px dashed var(--scratch-border);">
+                    <div>
+                        <div class="block block-subprogram" id="b-sub-0">definir dibujarEscalera (escalones)</div><br>
+                        <div class="block block-control block-indent" id="b-sub-1">repetir <span class="inline-val">escalones</span> veces</div><br>
+                        <div class="block block-motion block-indent" style="margin-left:40px;" id="b-sub-2">mover 20 pasos derecha ➡️</div><br>
+                        <div class="block block-motion block-indent" style="margin-left:40px;" id="b-sub-3">mover 20 pasos arriba ⬆️</div>
+                    </div>
+                `,
+                steps: [
+                    { type: 'main', blockId: 'b-main-0', exp: 'Este ejemplo muestra un Procedimiento Puro: ejecuta acciones visuales repetitivas sin necesidad de devolver valores.', action: (vars) => { vars.escalonesTotales = 3; }, moveSprite: {left: 50, bottom: 40} },
+                    { type: 'main', blockId: 'b-main-1', exp: 'Colocamos al objeto gato en su punto de partida inicial en el escenario.', moveSprite: {left: 50, bottom: 40} },
+                    { type: 'main', blockId: 'b-main-2', exp: 'Invocamos el procedimiento "dibujarEscalera" indicando que queremos 3 escalones.', action: (vars) => { vars.escalones = 3; vars.i = 1; }, pushStack: 'dibujarEscalera (3)' },
+                    { type: 'sub', blockId: 'b-sub-0', exp: 'Comienza el procedimiento. El parámetro local "escalones" se configura en 3.' },
+                    
+                    // Ciclo 1
+                    { type: 'sub', blockId: 'b-sub-1', exp: 'Bucle iterativo: Iniciamos el escalón número 1 de 3.' },
+                    { type: 'sub', blockId: 'b-sub-2', exp: 'El gato se desplaza de forma lateral hacia la derecha.', moveSprite: {relativeX: 30} },
+                    { type: 'sub', blockId: 'b-sub-3', exp: 'El gato sube verticalmente completando el primer escalón.', moveSprite: {relativeY: 30} },
+                    
+                    // Ciclo 2
+                    { type: 'sub', blockId: 'b-sub-1', exp: 'Bucle iterativo: Avanzamos al escalón número 2 de 3.', action: (vars) => { vars.i = 2; } },
+                    { type: 'sub', blockId: 'b-sub-2', exp: 'Desplazamiento horizontal para el segundo nivel.', moveSprite: {relativeX: 30} },
+                    { type: 'sub', blockId: 'b-sub-3', exp: 'Desplazamiento vertical completando el segundo nivel.', moveSprite: {relativeY: 30} },
+                    
+                    // Ciclo 3
+                    { type: 'sub', blockId: 'b-sub-1', exp: 'Bucle iterativo: Llegamos al último escalón número 3 de 3.', action: (vars) => { vars.i = 3; } },
+                    { type: 'sub', blockId: 'b-sub-2', exp: 'Último movimiento horizontal hacia la derecha.', moveSprite: {relativeX: 30} },
+                    { type: 'sub', blockId: 'b-sub-3', exp: 'Último movimiento vertical hacia arriba. ¡Estructura construida!', moveSprite: {relativeY: 30} },
+                    
+                    { type: 'sub', blockId: 'b-sub-1', exp: 'El bucle termina ya que se cumplieron las 3 repeticiones estipuladas.' },
+                    { type: 'sub', blockId: 'b-sub-0', exp: 'Finaliza el procedimiento completo sin devolver datos, solo ha modificado el escenario gráfico.', popStack: true },
+                    { type: 'main', blockId: 'b-main-3', exp: 'El control regresa al bloque inmediatamente siguiente en la línea principal de Scratch.', action: (vars) => { delete vars.escalones; delete vars.i; }, say: '¡Escalera terminada!' },
+                    { type: 'end', exp: 'Fin del programa. Queda patente cómo empaquetar movimientos repetitivos simplifica radicalmente el código principal.' }
+                ]
+            }
+        };
+
+        let currentExample = 'area';
+        let currentStepIndex = -1;
+        let variables = {};
+        let stack = [];
+        let isAuto = false;
+        let autoInterval = null;
+
+        function loadExample() {
+            resetSimulation();
+            currentExample = document.getElementById('example-select').value;
+            document.getElementById('workspace').innerHTML = examples[currentExample].blocksHTML;
+        }
+
+        function startSimulation() {
+            resetSimulation();
+            document.getElementById('btn-next').disabled = false;
+            document.getElementById('btn-auto').disabled = false;
+            document.getElementById('btn-start').disabled = true;
+            document.getElementById('example-select').disabled = true;
+            
+            // Push main function initially
+            pushToStack('Programa Principal', 'main');
+            
+            nextStep();
+        }
+
+        function nextStep() {
+            const steps = examples[currentExample].steps;
+            currentStepIndex++;
+
+            if (currentStepIndex >= steps.length) {
+                endSimulation();
+                return;
+            }
+
+            // Remove previous highlights
+            document.querySelectorAll('.block').forEach(b => b.classList.remove('active'));
+
+            const step = steps[currentStepIndex];
+
+            // Highlight current block if exists
+            if (step.blockId) {
+                const activeBlock = document.getElementById(step.blockId);
+                if (activeBlock) activeBlock.classList.add('active');
+            }
+
+            // Apply logical actions
+            if (step.action) {
+                step.action(variables);
+            }
+
+            // Call Stack modifications
+            if (step.pushStack) {
+                pushToStack(step.pushStack, 'sub');
+            }
+            if (step.popStack) {
+                popFromStack();
+            }
+
+            // Avatar interactions
+            if (step.say) {
+                showSpeech(step.say);
+            } else if (step.type !== 'end' && !step.moveSprite) {
+                hideSpeech();
+            }
+
+            // Move character on Stage
+            if (step.moveSprite) {
+                const sprite = document.getElementById('sprite');
+                if (step.moveSprite.left !== undefined) {
+                    sprite.style.left = step.moveSprite.left + 'px';
+                    sprite.style.bottom = step.moveSprite.bottom + 'px';
+                }
+                if (step.moveSprite.relativeX !== undefined) {
+                    let curLeft = parseInt(sprite.style.left) || 130;
+                    sprite.style.left = (curLeft + step.moveSprite.relativeX) + 'px';
+                }
+                if (step.moveSprite.relativeY !== undefined) {
+                    let curBottom = parseInt(sprite.style.bottom) || 40;
+                    sprite.style.bottom = (curBottom + step.moveSprite.relativeY) + 'px';
+                }
+                
+                // Reposition speech bubble dynamically with the cat
+                setTimeout(updateBubblePosition, 100);
+            }
+
+            // Update text panel and variable monitor view
+            document.getElementById('step-explanation').innerText = step.exp;
+            updateVariablesMonitor();
+
+            if (step.type === 'end') {
+                endSimulation();
+            }
+        }
+
+        function pushToStack(name, type) {
+            stack.push({ name, type });
+            renderStack();
+        }
+
+        function popFromStack() {
+            stack.pop();
+            renderStack();
+        }
+
+        function renderStack() {
+            const container = document.getElementById('stack-container');
+            container.innerHTML = '';
+            stack.forEach(frame => {
+                const div = document.createElement('div');
+                div.className = `stack-frame ${frame.type}`;
+                div.innerText = frame.name;
+                container.appendChild(div);
+            });
+        }
+
+        function updateVariablesMonitor() {
+            const monitor = document.getElementById('variables-monitor');
+            monitor.innerHTML = '';
+            
+            let hasVars = false;
+            for (let key in variables) {
+                hasVars = true;
+                const div = document.createElement('div');
+                // Determine if variable is local or global for visual differentiation
+                const isLocal = ['b', 'h', 'áreaLocal', 'n', 'escalones', 'i'].includes(key);
+                div.className = `monitor-row ${isLocal ? 'local' : 'global'}`;
+                
+                div.innerHTML = `
+                    <span class="monitor-label">
+                        ${isLocal ? '☁️ (Local) ' : '🌍 (Global) '} ${key}:
+                    </span>
+                    <span class="monitor-value">${variables[key]}</span>
+                `;
+                monitor.appendChild(div);
+            }
+
+            if (!hasVars) {
+                monitor.innerHTML = '<div style="color:#888; text-align:center;">Ninguna variable activa en este paso.</div>';
+            }
+        }
+
+        function showSpeech(text) {
+            const bubble = document.getElementById('speech-bubble');
+            bubble.innerText = text;
+            bubble.style.display = 'block';
+            updateBubblePosition();
+        }
+
+        function hideSpeech() {
+            document.getElementById('speech-bubble').style.display = 'none';
+        }
+
+        function updateBubblePosition() {
+            const sprite = document.getElementById('sprite');
+            const bubble = document.getElementById('speech-bubble');
+            bubble.style.left = (parseInt(sprite.style.left) + 40) + 'px';
+            bubble.style.bottom = (parseInt(sprite.style.bottom) + 75) + 'px';
+        }
+
+        function toggleAuto() {
+            if (isAuto) {
+                stopAuto();
+            } else {
+                isAuto = true;
+                document.getElementById('btn-auto').innerText = '⏸️ Pausar';
+                document.getElementById('btn-next').disabled = true;
+                const speed = parseInt(document.getElementById('speed-select').value);
+                autoInterval = setInterval(() => {
+                    nextStep();
+                }, speed);
+            }
+        }
+
+        function stopAuto() {
+            isAuto = false;
+            clearInterval(autoInterval);
+            document.getElementById('btn-auto').innerText = '▶️ Ejecución Automática';
+            document.getElementById('btn-next').disabled = false;
+        }
+
+        function endSimulation() {
+            stopAuto();
+            document.getElementById('btn-next').disabled = true;
+            document.getElementById('btn-auto').disabled = true;
+            document.getElementById('btn-start').disabled = false;
+            document.getElementById('example-select').disabled = false;
+        }
+
+        function resetSimulation() {
+            stopAuto();
+            currentStepIndex = -1;
+            variables = {};
+            stack = [];
+            document.getElementById('stack-container').innerHTML = '';
+            document.getElementById('variables-monitor').innerHTML = '<div style="color:#888; text-align:center;">Inicia la simulación para ver las variables.</div>';
+            document.getElementById('step-explanation').innerText = 'Haz clic en "Iniciar (Bandera Verde)" para comenzar.';
+            document.querySelectorAll('.block').forEach(b => b.classList.remove('active'));
+            
+            // Reset character state
+            const sprite = document.getElementById('sprite');
+            sprite.style.left = '130px';
+            sprite.style.bottom = '40px';
+            hideSpeech();
+
+            document.getElementById('btn-next').disabled = true;
+            document.getElementById('btn-auto').disabled = true;
+            document.getElementById('btn-start').disabled = false;
+            document.getElementById('example-select').disabled = false;
+        }
+
+        // Carga inicial por defecto
+        window.onload = () => {
+            loadExample();
+        };
+    </script>
+</body>
+</html>

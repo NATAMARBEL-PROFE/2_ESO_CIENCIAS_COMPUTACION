@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Algoritmos de Búsqueda 🔍</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            color: #2b4c7e;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            background-color: #e2e8f0;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            color: #4a5568;
+        }
+        .tab-btn.active {
+            background-color: #2b4c7e;
+            color: white;
+        }
+        .stats-panel {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-around;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        .stat-val {
+            color: #2b4c7e;
+        }
+        .setup-panel {
+            background-color: #edf2f7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+        .setup-panel label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .setup-panel input {
+            padding: 6px 10px;
+            width: 60px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e0;
+            font-size: 1rem;
+            text-align: center;
+        }
+        .info-box {
+            background-color: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            padding: 15px;
+            border-radius: 0 6px 6px 0;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            min-height: 45px;
+        }
+        .cards-area {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 30px 10px;
+            background: #fafafa;
+            border: 2px dashed #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow-x: auto;
+        }
+        .card {
+            width: 65px;
+            height: 90px;
+            background: white;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            user-select: none;
+        }
+        .card.comparing {
+            border-color: #dd6b20;
+            background-color: #feebc8;
+            transform: translateY(-8px);
+            box-shadow: 0 6px 12px rgba(221, 107, 32, 0.2);
+        }
+        .card.discarded {
+            border-color: #e2e8f0;
+            background-color: #edf2f7;
+            color: #a0aec0;
+            opacity: 0.6;
+        }
+        .card.found {
+            border-color: #38a169;
+            background-color: #c6f6d5;
+            color: #22543d;
+            transform: translateY(-10px);
+            box-shadow: 0 8px 15px rgba(56, 161, 105, 0.3);
+            animation: pulse 1s infinite alternate;
+        }
+        .card.in-range {
+            border-color: #3182ce;
+            box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2);
+        }
+        .card-label {
+            position: absolute;
+            bottom: -22px;
+            font-size: 0.75rem;
+            color: #718096;
+            font-weight: 600;
+        }
+        @keyframes pulse {
+            from { transform: translateY(-10px) scale(1); }
+            to { transform: translateY(-10px) scale(1.05); }
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .btn {
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-gray { background-color: #718096; color: white; }
+        .btn-gray:hover { background-color: #4a5568; }
+        .btn-blue { background-color: #3182ce; color: white; }
+        .btn-blue:hover { background-color: #2b6cb0; }
+        .btn-green { background-color: #38a169; color: white; }
+        .btn-green:hover { background-color: #2f855a; }
+        .btn:disabled {
+            background-color: #cbd5e0;
+            color: #a0aec0;
+            cursor: not-allowed;
+        }
+        select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e0;
+            font-size: 0.95rem;
+            background-color: white;
+            cursor: pointer;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid #cbd5e0;
+        }
+        footer {
+            margin-top: 40px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
+            width: 100%;
+            max-width: 1000px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #718096;
+            line-height: 1.6;
+        }
+        .highlight-text {
+            font-weight: bold;
+            color: #2b4c7e;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Visualizador de Algoritmos de Búsqueda 🔍</h1>
+    <div class="subtitle">Controla la ejecución paso a paso o de forma automática para tus alumnos</div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="setAlgorithm('secuencial')">Búsqueda Secuencial</button>
+        <button class="tab-btn" onclick="setAlgorithm('binaria')">Búsqueda Binaria</button>
+    </div>
+
+    <div class="stats-panel">
+        <div>Comparaciones realizas: <span id="comp-count" class="stat-val">0</span></div>
+        <div>Estado actual: <span id="search-status" class="stat-val">Esperando inicio</span></div>
+    </div>
+
+    <div class="setup-panel">
+        <div>
+            <label for="target-val">Número a buscar (1-100): </label>
+            <input type="number" id="target-val" min="1" max="100" value="42">
+        </div>
+        <button class="btn btn-gray" onclick="initializeCards()">Reiniciar / Mezclar valores</button>
+    </div>
+
+    <div id="info-text" class="info-box">
+        Selecciona un método de búsqueda, introduce el número objetivo y pulsa "Siguiente Paso" o "Búsqueda Automática".
+    </div>
+
+    <div class="cards-area" id="cards-container">
+        <!-- Tarjetas generadas dinámicamente -->
+    </div>
+
+    <div class="controls">
+        <select id="speed-select">
+            <option value="1500">Velocidad: Lenta (1.5s)</option>
+            <option value="2500">Velocidad: Muy Lenta (2.5s)</option>
+            <option value="700" selected>Velocidad: Fluida (0.7s)</option>
+        </select>
+        <button class="btn btn-blue" id="step-btn" onclick="nextStep()">Siguiente Paso ➡</button>
+        <button class="btn btn-green" id="auto-btn" onclick="toggleAuto()">¡Búsqueda Automática! ▶</button>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="legend-color" style="background: white;"></div> Sin buscar</div>
+        <div class="legend-item"><div class="legend-color" style="background: #feebc8; border-color: #dd6b20;"></div> Examinando / Mitad</div>
+        <div class="legend-item"><div class="legend-color" style="background: #edf2f7; border-color: #e2e8f0;"></div> Descartado</div>
+        <div class="legend-item"><div class="legend-color" style="background: #c6f6d5; border-color: #38a169;"></div> Encontrado</div>
+        <div class="legend-item"><div class="legend-color" style="border-color: #3182ce; box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2);"></div> Rango activo (Binaria)</div>
+    </div>
+</div>
+
+<footer>
+    Aplicación desarrollada por <strong>Natalia Martínez Belmonte</strong>, docente de 1º y 2º de ESO de las asignaturas de <em>Ciencias de la computación</em> y <em>Tecnología y digitalización</em>.<br>
+    Fecha de creación: 6 de octubre de 2026.
+</footer>
+
+<script>
+    let cards = [];
+    let currentAlgorithm = 'secuencial';
+    let target = 42;
+    let comparisons = 0;
+    let isRunningAuto = false;
+    let autoTimeout = null;
+    
+    // Estado interno del paso a paso
+    let searchState = {
+        index: 0,         // Para búsqueda secuencial
+        low: 0,           // Para búsqueda binaria
+        high: 9,          // Para búsqueda binaria
+        mid: -1,
+        phase: 'start',   // 'start', 'compare', 'end'
+        finished: false,
+        found: false
+    };
+
+    function generateRandomNumbers() {
+        let arr = [];
+        while(arr.length < 10){
+            let r = Math.floor(Math.random() * 99) + 1;
+            if(arr.indexOf(r) === -1) arr.push(r);
+        }
+        return arr;
+    }
+
+    function setAlgorithm(algo) {
+        if (isRunningAuto) toggleAuto();
+        currentAlgorithm = algo;
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        if(algo === 'secuencial') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        } else {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        }
+        
+        initializeCards();
+    }
+
+    function initializeCards() {
+        if (isRunningAuto) toggleAuto();
+        
+        let values = generateRandomNumbers();
+        if (currentAlgorithm === 'binaria') {
+            values.sort((a, b) => a - b);
+        }
+        
+        cards = values.map(v => ({ value: v, status: 'normal' }));
+        
+        comparisons = 0;
+        document.getElementById('comp-count').innerText = comparisons;
+        document.getElementById('search-status').innerText = "Listo para iniciar";
+        
+        target = parseInt(document.getElementById('target-val').value) || 42;
+        
+        // Reset state
+        searchState = {
+            index: 0,
+            low: 0,
+            high: cards.length - 1,
+            mid: -1,
+            phase: 'start',
+            finished: false,
+            found: false
+        };
+
+        if(currentAlgorithm === 'binaria') {
+            document.getElementById('info-text').innerHTML = `<strong>Búsqueda Binaria:</strong> Los valores se han ordenado automáticamente de menor a mayor (requisito indispensable). Buscaremos el número <span class="highlight-text">${target}</span>.`;
+        } else {
+            document.getElementById('info-text').innerHTML = `<strong>Búsqueda Secuencial:</strong> Los valores están desordenados. Buscaremos el número <span class="highlight-text">${target}</span> desde la primera posición hasta la última.`;
+        }
+        
+        document.getElementById('step-btn').disabled = false;
+        document.getElementById('auto-btn').disabled = false;
+        
+        renderCards();
+    }
+
+    function renderCards() {
+        const container = document.getElementById('cards-container');
+        container.innerHTML = '';
+        
+        cards.forEach((card, i) => {
+            const cardEl = document.createElement('div');
+            cardEl.className = `card ${card.status}`;
+            
+            // En búsqueda binaria, resaltar el rango de búsqueda activo
+            if (currentAlgorithm === 'binaria' && !searchState.finished) {
+                if (i >= searchState.low && i <= searchState.high) {
+                    cardEl.classList.add('in-range');
+                }
+            }
+            
+            cardEl.innerText = card.value;
+            
+            // Etiqueta del índice inferior
+            const labelEl = document.createElement('div');
+            labelEl.className = 'card-label';
+            
+            if (currentAlgorithm === 'binaria' && !searchState.finished) {
+                if (i === searchState.low && i === searchState.high) labelEl.innerText = `i:${i} (Izq/Der)`;
+                else if (i === searchState.low) labelEl.innerText = `i:${i} (Izq)`;
+                else if (i === searchState.high) labelEl.innerText = `i:${i} (Der)`;
+                else if (i === searchState.mid) labelEl.innerText = `i:${i} (Mitad)`;
+                else labelEl.innerText = `i:${i}`;
+            } else {
+                labelEl.innerText = `pos: ${i+1}`;
+            }
+            
+            cardEl.appendChild(labelEl);
+            container.appendChild(cardEl);
+        });
+    }
+
+    function nextStep() {
+        target = parseInt(document.getElementById('target-val').value) || 42;
+        if (searchState.finished) return;
+
+        if (currentAlgorithm === 'secuencial') {
+            executeSequentialStep();
+        } else {
+            executeBinaryStep();
+        }
+        
+        renderCards();
+        document.getElementById('comp-count').innerText = comparisons;
+        
+        if (searchState.finished) {
+            document.getElementById('step-btn').disabled = true;
+            document.getElementById('auto-btn').disabled = true;
+            if (isRunningAuto) toggleAuto();
+        }
+    }
+
+    function executeSequentialStep() {
+        let idx = searchState.index;
+        
+        if (idx >= cards.length) {
+            searchState.finished = true;
+            document.getElementById('search-status').innerText = "Terminado (No encontrado)";
+            document.getElementById('info-text').innerHTML = `Se ha recorrido toda la lista y el número <span class="highlight-text">${target}</span> no se encuentra en las tarjetas.`;
+            return;
+        }
+
+        // Si estábamos comparando una y no era, la descartamos antes de avanzar
+        if (idx > 0 && cards[idx-1].status === 'comparing') {
+            cards[idx-1].status = 'discarded';
+        }
+
+        cards[idx].status = 'comparing';
+        comparisons++;
+        document.getElementById('search-status').innerText = `Examinando posición ${idx + 1}`;
+
+        if (cards[idx].value === target) {
+            cards[idx].status = 'found';
+            searchState.finished = true;
+            searchState.found = true;
+            document.getElementById('search-status').innerText = "¡Encontrado!";
+            document.getElementById('info-text').innerHTML = `¡Éxito! En la posición <span class="highlight-text">${idx + 1}</span> se encontró la tarjeta con el valor <span class="highlight-text">${target}</span>. Total de comparaciones: ${comparisons}.`;
+        } else {
+            document.getElementById('info-text').innerHTML = `¿Es el valor de la tarjeta actual (<span class="highlight-text">${cards[idx].value}</span>) igual al buscado (<span class="highlight-text">${target}</span>)? <strong style="color:#e53e3e;">No</strong>. Avanzamos al siguiente elemento.`;
+            searchState.index++;
+            if (searchState.index >= cards.length) {
+                // Siguiente paso marcará el fin
+                setTimeout(() => {
+                    if(!searchState.found && searchState.index >= cards.length) {
+                        cards[idx].status = 'discarded';
+                        renderCards();
+                        document.getElementById('search-status').innerText = "Terminado (No encontrado)";
+                        document.getElementById('info-text').innerHTML = `Se ha recorrido toda la lista y el número <span class="highlight-text">${target}</span> no se encuentra.`;
+                        document.getElementById('step-btn').disabled = true;
+                        document.getElementById('auto-btn').disabled = true;
+                    }
+                }, 500);
+            }
+        }
+    }
+
+    function executeBinaryStep() {
+        if (searchState.low > searchState.high) {
+            searchState.finished = true;
+            document.getElementById('search-status').innerText = "Terminado (No encontrado)";
+            document.getElementById('info-text').innerHTML = `El rango se ha cerrado completamente (Izquierda > Derecha). El número <span class="highlight-text">${target}</span> no está en el conjunto.`;
+            return;
+        }
+
+        if (searchState.phase === 'start' || searchState.mid === -1) {
+            // Calcular la mitad del rango actual
+            searchState.mid = Math.floor((searchState.low + searchState.high) / 2);
+            
+            // Limpiar estados previos de examinando
+            cards.forEach((c, idx) => {
+                if (idx < searchState.low || idx > searchState.high) {
+                    c.status = 'discarded';
+                } else {
+                    c.status = 'normal';
+                }
+            });
+            
+            cards[searchState.mid].status = 'comparing';
+            comparisons++;
+            document.getElementById('search-status').innerText = `Calculando mitad (i: ${searchState.mid})`;
+            document.getElementById('info-text').innerHTML = `Establecemos el rango actual entre el índice <span class="highlight-text">${searchState.low}</span> y el <span class="highlight-text">${searchState.high}</span>. Calculamos el elemento del medio: mitad = (${searchState.low} + ${searchState.high}) / 2 = <span class="highlight-text">${searchState.mid}</span>.`;
+            searchState.phase = 'compare';
+        } 
+        else if (searchState.phase === 'compare') {
+            let midVal = cards[searchState.mid].value;
+            
+            if (midVal === target) {
+                cards[searchState.mid].status = 'found';
+                searchState.finished = true;
+                searchState.found = true;
+                document.getElementById('search-status').innerText = "¡Encontrado!";
+                document.getElementById('info-text').innerHTML = `¡Coincidencia! El valor en la mitad (<span class="highlight-text">${midVal}</span>) es igual al buscado (<span class="highlight-text">${target}</span>). ¡Búsqueda finalizada con éxito!`;
+            } 
+            else if (midVal < target) {
+                document.getElementById('info-text').innerHTML = `¿El valor central (<span class="highlight-text">${midVal}</span>) es igual a ${target}? No, es <strong>menor</strong>. Como la lista está ordenada, el objetivo debe estar a la <strong>derecha</strong>. Descartamos la mitad izquierda (del índice ${searchState.low} al ${searchState.mid}).`;
+                
+                // Descartar lado izquierdo e incluir el central
+                for(let i = searchState.low; i <= searchState.mid; i++) {
+                    cards[i].status = 'discarded';
+                }
+                searchState.low = searchState.mid + 1;
+                searchState.phase = 'start';
+            } 
+            else {
+                document.getElementById('info-text').innerHTML = `¿El valor central (<span class="highlight-text">${midVal}</span>) es igual a ${target}? No, es <strong>mayor</strong>. Como la lista está ordenada, el objetivo debe estar a la <strong>izquierda</strong>. Descartamos la mitad derecha (del índice ${searchState.mid} al ${searchState.high}).`;
+                
+                // Descartar lado derecho e incluir el central
+                for(let i = searchState.mid; i <= searchState.high; i++) {
+                    cards[i].status = 'discarded';
+                }
+                searchState.high = searchState.mid - 1;
+                searchState.phase = 'start';
+            }
+            
+            if (searchState.low > searchState.high && !searchState.found) {
+                searchState.finished = true;
+            }
+        }
+    }
+
+    function toggleAuto() {
+        const btn = document.getElementById('auto-btn');
+        if (isRunningAuto) {
+            isRunningAuto = false;
+            btn.innerHTML = '¡Búsqueda Automática! ▶';
+            btn.className = 'btn btn-green';
+            clearTimeout(autoTimeout);
+        } else {
+            isRunningAuto = true;
+            btn.innerHTML = 'Detener Pausa ⏸';
+            btn.className = 'btn btn-gray';
+            autoLoop();
+        }
+    }
+
+    function autoLoop() {
+        if (!isRunningAuto || searchState.finished) return;
+        nextStep();
+        const speed = parseInt(document.getElementById('speed-select').value) || 700;
+        autoTimeout = setTimeout(autoLoop, speed);
+    }
+
+    // Inicializar la primera carga
+    window.onload = function() {
+        initializeCards();
+    };
+</script>
+
+</body>
+</html>
